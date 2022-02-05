@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, Vibration, Platform } from 'react-native';
+import React, { useEffect, useRef, useState } from "react";
+import { View, StyleSheet, Text, Vibration, Platform } from "react-native";
+import LottieView from "lottie-react-native";
 
-import { colors } from '../../utils/colors';
-import { spacing } from '../../utils/sizes';
-import { Countdown } from '../../components/Countdown';
-import { RoundedButton } from '../../components/RoundedButton';
-import { Timing } from './Timing';
-import { ProgressBar } from 'react-native-paper';
-import { useKeepAwake } from 'expo-keep-awake';
+import { colors } from "../../utils/colors";
+import { spacing } from "../../utils/sizes";
+import { Countdown } from "../../components/Countdown";
+import { ProgressBar } from "react-native-paper";
+import { useKeepAwake } from "expo-keep-awake";
+import { Button, ButtonTypes } from "../../components/Button";
 
 const DEFAULT_TIME = 0.1;
 
@@ -17,13 +17,23 @@ export function Timer({ focusSubject, onTimerEnd, clearSubject }) {
   const [isStarted, setIsStarted] = useState(false);
   const [progress, setProgress] = useState(1);
   const [minutes, setMinutes] = useState(DEFAULT_TIME);
+  const animationRef = useRef();
+  const [isModifying, setIsModifying] = useState(false);
+
+  useEffect(() => {
+    if (isStarted) {
+      animationRef.current.resume();
+    } else {
+      animationRef.current.pause();
+    }
+  }, [isStarted]);
 
   const onProgress = (progress) => {
     setProgress(progress);
   };
 
   const vibrate = () => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === "ios") {
       const interval = setInterval(() => Vibration.vibrate(), 1000);
       setTimeout(() => clearInterval(interval), 3000);
     } else {
@@ -42,41 +52,68 @@ export function Timer({ focusSubject, onTimerEnd, clearSubject }) {
   const changeTime = (min) => {
     setMinutes(min);
     setProgress(1);
+    setIsModifying(false);
   };
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>
+        Task: <Text style={styles.task}>{focusSubject}</Text>
+      </Text>
       <View style={styles.countdown}>
-        <Countdown
-          minutes={minutes}
-          onProgress={onProgress}
-          isPaused={!isStarted}
-          onEnd={onEnd}
-        />
-      </View>
-      <View style={{ paddingTop: spacing.xxl }}>
-        <Text style={styles.title}>Focusing on:</Text>
-        <Text style={styles.task}>{focusSubject}</Text>
-      </View>
-      <View style={{ padding: spacing.sm }}>
-        <ProgressBar
-          progress={progress}
-          color="#5E84E2"
-          style={{ height: 10 }}
-        />
-      </View>
-      <View style={styles.buttonWrapper}>
-        <Timing onChangeTime={changeTime} />
-      </View>
-      <View style={styles.buttonWrapper}>
-        {isStarted ? (
-          <RoundedButton title="pause" onPress={() => setIsStarted(false)} />
+        {isModifying ? (
+          <View style={styles.buttonWrapper}>
+            <Button
+              onPress={() => changeTime(10)}
+              style={{ marginRight: spacing.md }}
+              text="10:00"
+            ></Button>
+            <Button
+              onPress={() => changeTime(20)}
+              style={{ marginRight: spacing.md }}
+              text="20:00"
+            ></Button>
+            <Button onPress={() => changeTime(30)} text="30:00"></Button>
+          </View>
         ) : (
-          <RoundedButton title="start" onPress={() => setIsStarted(true)} />
+          <View onStartShouldSetResponder={() => setIsModifying(true)}>
+            <Countdown
+              minutes={minutes}
+              onProgress={onProgress}
+              isPaused={!isStarted}
+              onEnd={onEnd}
+            />
+          </View>
         )}
       </View>
-      <View style={styles.clearSubject}>
-        <RoundedButton title="-" size={50} onPress={() => clearSubject()} />
+      <View style={styles.animation}>
+        <LottieView
+          ref={animationRef}
+          style={{ flex: 1 }}
+          source={require("../../assets/girl-animation.json")}
+          loop
+        />
+      </View>
+      <View style={styles.buttonWrapper}>
+        <Button
+          style={{ flex: 1, marginRight: spacing.md }}
+          text={isStarted ? "Pause" : "Start"}
+          onPress={() => setIsStarted(!isStarted)}
+          type={ButtonTypes.PRIMARY}
+        />
+        <Button
+          style={{ flex: 1 }}
+          text="Cancel"
+          type={ButtonTypes.SECONDARY}
+          onPress={() => clearSubject()}
+        />
+      </View>
+      <View style={styles.progressBar}>
+        <ProgressBar
+          progress={progress}
+          color={colors.darkCoral}
+          style={{ height: 10 }}
+        />
       </View>
     </View>
   );
@@ -85,31 +122,43 @@ export function Timer({ focusSubject, onTimerEnd, clearSubject }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: spacing.md,
   },
   title: {
-    color: colors.white,
-    textAlign: 'center',
+    flex: 1,
+    fontSize: spacing.lg,
+    color: colors.black,
+    textAlign: "center",
+    paddingTop: spacing.xxl,
   },
   task: {
-    fontWeight: 'bold',
-    color: colors.white,
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: colors.black,
+    textAlign: "center",
   },
   countdown: {
-    flex: 0.5,
-    alignItems: 'center',
-    justifyContent: 'center',
+    flex: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  animation: {
+    flex: 6,
   },
   buttonWrapper: {
-    flex: 0.3,
-    padding: 15,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flex: 2,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: spacing.md,
   },
   clearSubject: {
+    flexDirection: "row",
+    flexWrap: "nowrap",
     paddingBottom: 25,
     paddingLeft: 25,
+  },
+  progressBar: {
+    flex: 0.5,
+    justifyContent: "flex-end",
   },
 });
