@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "focustime",
+    "name": "FocusTime",
     "slug": "snack-7083861b-665f-461b-8ae5-c7c03e1d0e9b",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,9 +13,7 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
